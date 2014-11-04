@@ -1,0 +1,13 @@
+[Unit]
+Description=Spacenotify service for %i
+After=network.target
+
+[Service]
+User=%i
+Group=%i
+ExecStart=/opt/SpaceNotify/spacenotify.py --watch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
