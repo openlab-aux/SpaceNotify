@@ -20,3 +20,8 @@ addition you can run it in watch mode with
 SpaceNotify will then call the API periodically to watch for changes. If the
 state has changed since the last call a notification is displayed via
 libnotify.
+
+You can change the default check frequency of 5 minutes to something else:
+```bash
+./spacenotify.py --watch --frequency 23m
+```

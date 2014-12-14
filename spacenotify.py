@@ -5,12 +5,13 @@ import datetime
 import time
 import requests
 import argparse
+from argparse import ArgumentParser, ArgumentTypeError
+import re
 import os
 from os.path import dirname, join, abspath
+import sys
 
 SPACEAPI = "https://api.openlab-augsburg.de/13"
-FREQUENCY = 300
-
 
 
 def notify(state, lastchange):
@@ -39,11 +40,33 @@ def callSpaceAPI():
     data = rq.json()
     return data['state']['open'], data['state']['lastchange']
     
+def convert_frequencystr(frequency):
+    x = 0
+    pattern = re.compile('^(?P<value>\d+)(?P<unit>[smh]?)$')
+    match = pattern.match(frequency)
+
+    if match:
+        groupdict = match.groupdict()
+        value = int(groupdict['value'])
+        unit = groupdict['unit']
+
+        if unit == 'm':
+            return value * 60
+        elif unit == 'h':
+            return value * 60 * 60
+        else:
+            return value
+    else:
+        raise ArgumentTypeError('Invalid argument. Valid values are positive integers, optionally '
+                                'appended by (s)econds, (m)inutes or (h)ours.')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Displays the space state via libnotify.')
-    parser.add_argument('--watch', action='store_true', help='Periodically check for state changes. Runs until interrupted.')
+    parser = ArgumentParser(description='Displays the space state via libnotify.')
+    parser.add_argument('--watch', action='store_true',
+                        help='Periodically check for state changes. Runs until interrupted.')
+    parser.add_argument('--frequency', default='300', type=convert_frequencystr,
+                        help='Set a frequency at which the API is called. Default: 5 minutes.')
     args = parser.parse_args()
 
     Notify.init("SpaceNotify")
@@ -62,7 +85,7 @@ if __name__ == '__main__':
 
                     notify(state, timestr)
 
-                time.sleep(FREQUENCY)
+                time.sleep(args.frequency)
 
         except (KeyboardInterrupt, SystemExit):
             print("\nReceived interrupt, bye o/")
