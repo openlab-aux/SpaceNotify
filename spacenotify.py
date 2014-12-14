@@ -1,47 +1,44 @@
 #!/usr/bin/env python3
 
-from gi.repository import Notify
-import datetime
-import time
-import requests
-import argparse
 from argparse import ArgumentParser, ArgumentTypeError
-import re
+import datetime
 import os
 from os.path import dirname, join, abspath
-import sys
+import re
+import time
+from gi.repository import Notify
+import requests
 
 SPACEAPI = "https://api.openlab-augsburg.de/13"
 
 
 def notify(state, lastchange):
-    iconPath = abspath(join(dirname(__file__),"icon"))
+    iconpath = abspath(join(dirname(__file__), "icon"))
 
-    if(state):
+    if state:
         msg = "Das OpenLab ist seit " + lastchange + " geöffnet!"
-        icon = "file://" + join(iconPath, "open.png")
-    elif(state == False):
+        icon = "file://" + join(iconpath, "open.png")
+    elif state is False:
         msg = "Das OpenLab wurde um " + lastchange + " Uhr geschlossen."
-        icon = "file://" + join(iconPath, "closed.png")
-    elif(state == None):
+        icon = "file://" + join(iconpath, "closed.png")
+    elif state is None:
         msg = "Status unbekannt :("
-        icon = "file://" + join(iconPath, "unknown.png")
+        icon = "file://" + join(iconpath, "unknown.png")
 
     notification = Notify.Notification.new("Raumstatus", msg, icon)
-    notification.show ()
+    notification.show()
 
 
-
-def callSpaceAPI():
+def call_spaceapi():
     rq = requests.get(SPACEAPI)
-    if(rq.status_code != 200):
+    if rq.status_code != 200:
         raise Exception("Bad response: " + str(rq.status_code))
 
     data = rq.json()
     return data['state']['open'], data['state']['lastchange']
-    
+
+
 def convert_frequencystr(frequency):
-    x = 0
     pattern = re.compile('^(?P<value>\d+)(?P<unit>[smh]?)$')
     match = pattern.match(frequency)
 
@@ -71,14 +68,14 @@ if __name__ == '__main__':
 
     Notify.init("SpaceNotify")
 
-    if(args.watch):
+    if args.watch:
         try:
-            lastState, _ = callSpaceAPI()
-            while(True):
-                state, lastchange = callSpaceAPI()
+            laststate, _ = call_spaceapi()
+            while True:
+                state, lastchange = call_spaceapi()
 
-                if(state != lastState):
-                    lastState = state
+                if state != laststate:
+                    laststate = state
                     timestr = datetime.datetime.fromtimestamp(
                         int(lastchange)
                     ).strftime('%H:%M')
@@ -87,7 +84,7 @@ if __name__ == '__main__':
 
                 time.sleep(args.frequency)
 
-        except (KeyboardInterrupt, SystemExit):
+        except(KeyboardInterrupt, SystemExit):
             print("\nReceived interrupt, bye o/")
             exit(0)
 
@@ -97,7 +94,7 @@ if __name__ == '__main__':
     else:
         try:
             # one shot
-            state, lastchange = callSpaceAPI()
+            state, lastchange = call_spaceapi()
 
             timestr = datetime.datetime.fromtimestamp(
                 int(lastchange)
